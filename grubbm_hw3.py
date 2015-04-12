@@ -341,9 +341,13 @@ def get_adjacent(point, dimensions=None):
 
 def write_kb_to_file(kb, filename):
     tos = lambda d: {str(k):str(v) for k,v in d.items()}
+    certain_hints, maybe_hints = kb.get_hints()
     obj = {
         'observations': tos(kb.get_observations()),
+        'known_locations': dict((danger_map[k], str(v)) for k,v in certain_hints.items()),
+        'possible_locations': dict((danger_map[k], str(v)) for k,v in maybe_hints.items()),
         'intersect_map': tos(kb.intersect_map()),
+        'wumpus_alive': kb.wumpus_dead,
     }
     with open(filename, 'w') as fp:
         dump(obj, fp)
