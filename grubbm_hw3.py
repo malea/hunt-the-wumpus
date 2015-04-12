@@ -157,6 +157,13 @@ def shoot_arrow(game, kb):
             return True, arrow_room
         moving_game = moving_game._replace(location=arrow_room)
 
+    # we missed, the wumpus is not here
+    moving_game = game
+    while game.orientation in possible_moves(moving_game):
+        kb.known_non_wumpus_points.add(tuple(moving_game.location))
+        arrow_room = possible_moves(moving_game)[game.orientation]
+        moving_game = moving_game._replace(location=arrow_room)
+
     return False, None
 
 def execute_command(command, game, kb):
@@ -269,6 +276,7 @@ class KnowledgeBase:
         self.dimensions = dimensions
         self.visited = {}
         self.wumpus_dead = False
+        self.known_non_wumpus_points = set()
 
     def add_observation(self, point, percepts):
         """Load an observation into the knowledge base.
@@ -305,6 +313,8 @@ class KnowledgeBase:
                     continue
                 possible_points = set()
                 for point in self.get_adjacent(percept_point):
+                    if percept == 'S' and point in self.known_non_wumpus_points:
+                        continue
                     if percept in intersect_map.get(point, []):
                         possible_points.add(point)
                 assert len(possible_points) != 0, (
@@ -347,6 +357,7 @@ def write_kb_to_file(kb, filename):
         'known_locations': dict((danger_map[k], str(v)) for k,v in certain_hints.items()),
         'possible_locations': dict((danger_map[k], str(v)) for k,v in maybe_hints.items()),
         'intersect_map': tos(kb.intersect_map()),
+        'known_non_wumpus_points_from_the_arrow': str(kb.known_non_wumpus_points),
         'wumpus_alive': kb.wumpus_dead,
     }
     with open(filename, 'w') as fp:
